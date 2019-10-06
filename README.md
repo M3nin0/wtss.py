@@ -20,7 +20,7 @@ sudo easy_install wtss
 
 ## Building and installing wtss.py from source
 
-**1.** Open a shell script and go to the folder ```src```.
+**1.** Open a shell script and go to the repository root folder.
 
 **2.** In the shell, type:
 ```bash
@@ -35,7 +35,7 @@ Import the ```wtss``` class and then use it to create an objet to retrieve the t
 ```python
 from wtss import wtss
 
-w = wtss("http://www.dpi.inpe.br/tws")
+w = wtss("http://www.esensing.dpi.inpe.br")
 
 cv_list = w.list_coverages()
 
@@ -61,7 +61,7 @@ import matplotlib.pyplot as pyplot
 import matplotlib.dates as mdates
 from wtss import wtss
 
-w = wtss("http://www.dpi.inpe.br/tws")
+w = wtss("http://www.esensing.dpi.inpe.br")
 
 # retrieve the time series for location with longitude = -54, latitude =  -12
 ts = w.time_series("mod13q1_512", "red", -12.0, -54.0, start_date="2001-01-01", end_date="2001-12-31")
