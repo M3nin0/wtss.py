@@ -29,9 +29,14 @@ except ImportError:
     # Fall back to Python 2's urllib2
     from urllib2 import urlopen
 
+DEFAULT_SERVICE_URL = "http://www.esensing.dpi.inpe.br"
+
 
 class wtss:
     """This class implements the WTSS API for Python. See https://github.com/e-sensing/eows for more information on WTSS.
+
+    Args:
+        host (str): the server URL.
 
     Example:
 
@@ -39,7 +44,7 @@ class wtss:
 
             from wtss import wtss
 
-            w = wtss("http://www.dpi.inpe.br/tws")
+            w = wtss("http://www.esensing.dpi.inpe.br")
 
             ts = w.time_series(coverage = "mod13q1_512", attributes = ["red", "nir"], latitude = -12.0, longitude = -54.0)
 
@@ -50,15 +55,8 @@ class wtss:
         host (str): the WTSS server URL.
     """
 
-
-    def __init__(self, host):
-        """Create a WTSS client attached to the given host address (an URL).
-
-        Args:
-            host (str): the server URL.
-        """
+    def __init__(self, host=DEFAULT_SERVICE_URL):
         self.host = host
-
 
     def list_coverages(self):
         """Returns the list of all available coverages in the service.
@@ -71,7 +69,6 @@ class wtss:
 
         """
         return self._request("%s/wtss/list_coverages" % self.host)
-
 
     def describe_coverage(self, cv_name):
         """Returns the metadata of a given coverage.
@@ -88,7 +85,6 @@ class wtss:
                 attrs[attr['name']] = attr
         result['attributes'] = attrs
         return result
-
 
     def time_series(self, coverage, attributes, latitude, longitude, start_date=None, end_date=None):
         """Retrieve the time series for a given location and time interval.
@@ -132,29 +128,28 @@ class wtss:
 
         if end_date:
             query_str += "&end_date={}".format(end_date)
-
         doc = self._request(query_str)
 
         if 'exception' in doc: 
             raise Exception(doc["exception"])
 
         tl = doc["result"]["timeline"]
-
         tl = self._timeline(tl, "%Y-%m-%d")
-
         doc["result"]["timeline"] = tl
 
         return time_series(doc)
 
-
     def _request(self, uri):
+        """Create a request for the given uri
 
-        resource = urlopen(uri)
-
-        doc = resource.read().decode('utf-8')
-
-        return json.loads(doc)
-
+        Args:
+            uri (str): URI where the request will be created
+        Returns:
+            dict: Dictionary with values ​​returned from request
+        """
+        return json.loads(
+            urlopen(uri).read().decode("utf-8")
+        )
 
     @classmethod
     def _timeline(cls, tl, fmt):
@@ -170,7 +165,6 @@ class wtss:
         date_timeline = [datetime.strptime(t, fmt).date() for t in tl]
 
         return date_timeline
-
 
     @classmethod
     def values(cls, doc, attr_name):
@@ -192,12 +186,14 @@ class wtss:
         for attr in attrs:
             if attr["attribute"] == attr_name:
                 return attr["values"]
-
         raise ValueError("Time series for attribute '{0}' not found!".format(attr_name))
 
 
 class time_series:
     """This class is a proxy for the result of a time_series query in WTSS.
+
+    Args:
+        time_series (dict): a response from a time_series query to a WTSS server.
 
     Example:
 
@@ -214,8 +210,6 @@ class time_series:
             print(ts["nir"])
 
             print(ts.timeline())
-
-
     Attributes:
 
         attributes (list): the list of attributes from a time_series query to a WTSS server.
@@ -223,14 +217,7 @@ class time_series:
     """
 
     def __init__(self, time_series):
-        """Initializes a timeseries object from a WTSS time_series query.
-
-        Args:
-            time_series (dict): a response from a time_series query to a WTSS server.
-        """
-
         self.doc = time_series
-
         self.attributes = {}
 
         for attr in time_series["result"]["attributes"]:
@@ -239,7 +226,6 @@ class time_series:
             self.attributes[name] = values
 
         self.timeline = time_series["result"]["timeline"]
-
 
     def __getitem__(self, item):
         """Returns the list of values for a given attribute.
@@ -252,7 +238,7 @@ class time_series:
         """
         return self.attributes[item]
 
-
+    # ToDo: Check this method
     def attributes(self):
         """Returns a list with attribute names.
 
@@ -261,4 +247,3 @@ class time_series:
         """
 
         return self.attributes.keys()
-
